@@ -50,8 +50,11 @@ def resolve_icon(name: str) -> str:
     candidates = [
         _this_file().parent.parent.parent / "data" / f"{name}.svg",
         Path.home() / ".local" / "share" / "icons" / "hicolor" / "scalable" / "apps" / f"{name}.svg",
-        Path(f"/usr/share/icons/hicolor/scalable/apps/{name}.svg"),
     ]
+    for data_dir in os.environ.get("XDG_DATA_DIRS", "").split(":"):
+        if data_dir:
+            candidates.append(Path(data_dir) / "icons" / "hicolor" / "scalable" / "apps" / f"{name}.svg")
+    candidates.append(Path(f"/usr/share/icons/hicolor/scalable/apps/{name}.svg"))
     for _p in candidates:
         if _p.exists():
             return str(_p)

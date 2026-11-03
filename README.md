@@ -152,6 +152,65 @@ curl -sSL https://raw.githubusercontent.com/goodeesh/GigaMate/main/install.sh | 
 The installer auto-detects your distro, installs dependencies, builds the kernel
 module (if headers available), sets up udev rules, and installs a systemd service.
 
+### NixOS (Flake)
+
+GigaMate provides a Nix flake with application packages and a NixOS module.
+
+#### Quick run and build
+
+Run the CLI directly without installing:
+
+```sh
+nix run github:goodeesh/GigaMate -- --help
+```
+
+Or build the package from checkout:
+
+```sh
+nix build .#gigamate
+```
+
+#### NixOS Module Configuration
+
+Add GigaMate to your `flake.nix`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    gigamate = {
+      url = "github:goodeesh/GigaMate";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, gigamate, ... }: {
+    nixosConfigurations.myhostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        gigamate.nixosModules.default
+        {
+          # Installs gigamate and registers upstream 70-gigamate.rules (uaccess)
+          hardware.gigamate.enable = true;
+
+          # Optional: build and load gigamate_acpi against your boot.kernelPackages
+          hardware.gigamate.enableAcpi = false;
+        }
+      ];
+    };
+  };
+}
+```
+
+#### What enabling ACPI changes
+
+Enabling `hardware.gigamate.enableAcpi = true` compiles `gigamate_acpi` out-of-tree against `config.boot.kernelPackages` and registers it through `boot.extraModulePackages` and `boot.kernelModules`.
+
+**Permissions & exposure:**
+- The kernel module exposes `/sys/devices/platform/gigamate_acpi/profile` and `/sys/devices/platform/gigamate_acpi/charge_limit` with mode `0666` (world-writable) so unprivileged desktop user sessions can control fan/thermal profiles and charge thresholds without root or polkit helpers.
+- Live hardware telemetry attributes (`temp1_input`, `fan1_input`, `pwm1`, etc.) are exposed read-only (`0444`).
+- In contrast, keyboard access is scoped to the active seat session using systemd-logind uaccess rules (`70-gigamate.rules`), not world-writable modes.
+
 **ACPI kernel module (no AUR required):**
 
 - The `gigamate_acpi` kernel module is built and installed via **DKMS**
