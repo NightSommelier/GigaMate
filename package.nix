@@ -51,6 +51,10 @@ python3Packages.buildPythonApplication {
     install -Dm644 data/checkbox-checked.svg -t $out/share/icons/hicolor/scalable/apps/
 
     install -Dm644 data/70-gigamate.rules -t $out/lib/udev/rules.d/
+
+    mkdir -p $out/lib/systemd/user
+    substitute data/gigamate.service $out/lib/systemd/user/gigamate.service \
+      --replace-fail '%h/.local/bin/gigamate-tray' "$out/bin/gigamate-tray"
   '';
 
   preFixup = ''

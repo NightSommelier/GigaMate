@@ -193,6 +193,9 @@ Add GigaMate to your `flake.nix`:
           # Installs gigamate and registers upstream 70-gigamate.rules (uaccess)
           hardware.gigamate.enable = true;
 
+          # Optional: autostart the tray daemon (gigamate.service) with graphical session
+          hardware.gigamate.enableUserDaemon = false;
+
           # Optional: build and load gigamate_acpi against your boot.kernelPackages
           hardware.gigamate.enableAcpi = false;
         }

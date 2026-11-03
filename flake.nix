@@ -53,12 +53,30 @@
                 default = false;
                 description = "Whether to build and load the GigaMate ACPI WMI kernel module.";
               };
+
+              enableUserDaemon = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether to autostart the GigaMate tray background daemon (gigamate.service) with the graphical session.";
+              };
             };
 
             config = lib.mkMerge [
               (lib.mkIf cfg.enable {
                 environment.systemPackages = [ cfg.package ];
                 services.udev.packages = [ cfg.package ];
+                systemd.user.services.gigamate = {
+                  description = "GigaMate — Gigabyte laptop management";
+                  partOf = [ "graphical-session.target" ];
+                  after = [ "graphical-session.target" ];
+                  serviceConfig = {
+                    Type = "exec";
+                    ExecStart = "${cfg.package}/bin/gigamate-tray";
+                    Restart = "on-failure";
+                    RestartSec = 5;
+                  };
+                  wantedBy = lib.mkIf cfg.enableUserDaemon [ "graphical-session.target" ];
+                };
               })
               (lib.mkIf cfg.enableAcpi {
                 boot.extraModulePackages = [
